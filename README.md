@@ -6,9 +6,10 @@ The following repository contains scripts used for the quantification of iNM and
 1) NM brightfield images were initially analyzed using the 'TrueAI' feature of [VS200 software](https://www.olympus-lifescience.com/en/solutions-based-systems/vs200/)
 2) Data was exported in .xlsx format with tabs "Object Measurements", "Class Measurements" & "ROI Measurements"
 3) The "Object Measurements" tab is used for iNM and eNM quantification in which the tab headers should include "Area [µm²]","ROI","Mean (Gray Intensity Value)","Brainbank_ID"
+4) Quantification of iNM and eNM can then be performed using the scripts defined in quant_NM.R
 
 
-Notes
+# Notes
 Determination of modalities; The modalities of the NM Area distribution (log10) were identified by examination of the the modes of kernel density estimator (KDE) as the bandwidth is varied.
 The modes for each bandwidth were plotted (Mode Trace; top) and visual examination determined 2 modes (k=2) were prominant (Distribution; bottom). Points indicate where traces are most vertical. 
 Scripts used for the determination of modalities are mode_define.R
