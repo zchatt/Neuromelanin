@@ -1,5 +1,5 @@
 # Neuromelanin
-R scripts for the quantification of intracellular and extracellular Neuromelanin (iNM/eNM)
+R scripts for the quantification of intracellular and extracellular Neuromelanin (iNM/eNM) [![DOI](https://zenodo.org/badge/742200160.svg)](https://zenodo.org/doi/10.5281/zenodo.10494621)
 
 # Overview
 The following repository contains scripts used for the quantification of iNM and eNM
