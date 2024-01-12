@@ -1,7 +1,7 @@
 # Neuromelanin
 R scripts for the quantification of intracellular and extracellular Neuromelanin (iNM/eNM)
 
-# Useage
+# Overview
 The following repository contains scripts used for the quantification of iNM and eNM
 1) NM brightfield images were initially analyzed using the 'TrueAI' feature of [VS200 software](https://www.olympus-lifescience.com/en/solutions-based-systems/vs200/)
 2) Data was exported in .xlsx format with tabs "Object Measurements", "Class Measurements" & "ROI Measurements"
