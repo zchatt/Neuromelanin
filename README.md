@@ -12,12 +12,12 @@ The following repository contains scripts used for the quantification of iNM and
 # Notes
 Determination of modalities; The modalities of the NM Area distribution (log10) were identified by examination of the the modes of kernel density estimator (KDE) as the bandwidth is varied.
 The modes for each bandwidth were plotted (Mode Trace; top) and visual examination determined 2 modes (k=2) were prominant (Distribution; bottom). Points indicate where traces are most vertical. 
-Scripts used for the determination of modalities are mode_define.R
+Scripts used for the determination of modalities are [mode_define.R](mode_define.R)
 
 ![image](https://github.com/zchatt/Neuromelanin/assets/30888259/ec751717-97c1-44f9-9882-e35f46d89eb3)
 
 To quantify iNM and eNM granules for each sample in a cohort we perform k-means clustering (k=2) on the log10(Area [µm²]) and set a 95% Confidence Interval (CI) threshold of the normal distribution under each peak.
-Scripts used for the quantification of iNM and eNM are quant_NM.R
+Scripts used for the quantification of iNM and eNM are [quant_NM.R](quant_NM.R)
 
 ![image](https://github.com/zchatt/Neuromelanin/assets/30888259/95cf90f1-5383-4b1c-9be7-065a131d0d96)
 
