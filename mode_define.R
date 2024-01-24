@@ -11,7 +11,7 @@ theme_set(theme_minimal())
 ### Inputs  ###
 ###############
 analysis_dir <- "/Users/zacc/USyd/NM_analysis/"
-NM_data_dir = "/Users/zacc/USyd/NM_analysis/NM_data_new"
+NM_data_dir = "/Users/zacc/USyd/NM_analysis/NM_data_170124"
 setwd(analysis_dir)
 
 ############################################
@@ -55,13 +55,56 @@ df_agg <- as.data.frame(do.call("rbind", ag_list))
 df_agg$log10_Area <- log10(df_agg$`Area [µm²]`)
 
 
+
+## OR ##
+# from one single file with each tab as data
+file.names <- "/Users/zacc/USyd/NM_analysis/NM_data_170124/IntracellularNMMidbrain 17:01:24.xlsx"
+sheets <- excel_sheets(path = file.names)
+ag_list <- list()
+for (i in 1:length(sheets)){
+  print(i)
+  df <- read_xlsx(file.names, sheets[i])
+  # remove rows without ROI eg. summary rows.
+  df <- df[!is.na(df$ROI),]
+  # add Brainbank_ID
+  df$Brainbank_ID <- sheets[i]
+  
+  # add to list
+  ag_list[[i]] <- df
+}
+ag_list1 <- ag_list
+
+file.names <- "/Users/zacc/USyd/NM_analysis/NM_data_170124/IntracellularNMLC 17:01:24.xlsx"
+sheets <- excel_sheets(path = file.names)
+ag_list <- list()
+for (i in 1:length(sheets)){
+  print(i)
+  df <- read_xlsx(file.names, sheets[i])
+  # remove rows without ROI eg. summary rows.
+  df <- df[!is.na(df$ROI),]
+  # add Brainbank_ID
+  df$Brainbank_ID <- sheets[i]
+  
+  # add to list
+  ag_list[[i]] <- df
+}
+
+# collapse to dataframe
+df_agg1 <- as.data.frame(do.call("rbind", ag_list1))
+df_agg <- as.data.frame(do.call("rbind", ag_list))
+df_agg <- rbind(df_agg,df_agg1)
+
+# format
+df_agg$log10_Area <- log10(df_agg$`Area [µm²]`)
+
+
 ###############################################################
 ### Part 2: Evalutate the number of modes in a distribution ###
 ###############################################################
-var_interest = "total"
+var_interest = c("log10_Area")
 for (i in 1:length(var_interest)) {
-  print(i)
-  x <- log10(df_agg$`Area [µm²]`)
+  print(var_interest[i])
+  x <- df_agg[,var_interest[i]]
   
   # Find the modes of a KDE
   findmodes <- function(kde) {
@@ -112,18 +155,18 @@ for (i in 1:length(var_interest)) {
     geom_line(aes(col=id), size=1.2, show.legend=FALSE) +
     geom_point(aes(bw, Mode), data=as.data.frame(t(modes)), size=3, col="Black", alpha=1/2) +
     scale_x_log10() + ylab("Mode") + xlab("Bandwidth") +
-    coord_flip() + ylim(0.5,3.5) +
+    coord_flip() + 
     ggtitle(var_interest[i])
   
   
   g2 <- ggplot(data.frame(x), aes(x, ..density..)) +
     geom_histogram(aes(y=..density..), colour="black", fill="white", bins =100)+
-    geom_density(alpha=.2, fill="grey") + xlim(0.5,3.5) +
+    geom_density(alpha=.2, fill="grey") + 
     geom_vline(data=as.data.frame(t(modes)),
                mapping=aes(xintercept=Mode), col="#D18A4e", size=1) +
     xlab("log10(`Area [µm²]`)") + ylab("Density") 
   
-  arrange <- ggarrange(plotlist=list(g1,g1,g2,g2), nrow=2, ncol=2, widths = c(2,2))
+  arrange <- ggarrange(plotlist=list(g1,g2), nrow=2, ncol=1, widths = c(2,2))
   ggsave(paste0("Mode_Trace_",var_interest[i],".png"), arrange)
 }
 
