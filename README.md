@@ -22,5 +22,5 @@ Scripts used for the quantification of iNM and eNM are [quant_NM.R](quant_NM.R)
 
 ![image](https://github.com/zchatt/Neuromelanin/assets/30888259/95cf90f1-5383-4b1c-9be7-065a131d0d96)
 
-License
+# License
 This research was funded in whole or in part by Aligning Science Across Parkinson’s (ASAP-020505) through the Michael J. Fox Foundation for Parkinson’s Research (MJFF). For the purpose of open access, the author has applied a CC BY 4.0 public copyright license to all Author Accepted Manuscripts arising from this submission.
