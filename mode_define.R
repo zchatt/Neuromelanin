@@ -17,42 +17,42 @@ setwd(analysis_dir)
 ############################################
 ### Part 1: Extract NM quantification's  ###
 ############################################
-# list of NM quant files
-file.names <- list.files(path=NM_data_dir,full.names=T)
-ag_list <- list()
-for (i in 1:length(file.names)){
-  print(length(file.names)-i)
-  print(file.names[i])
-  df <- read_xlsx(file.names[i], 1)
-  # remove rows without ROI eg. summary rows.
-  df <- df[!is.na(df$ROI),]
-  # add Brainbank_ID
-  df$Brainbank_ID <- rep(gsub("_.*","",basename(file.names[i])),nrow(df))
-  # select cols
-  #df <- df[,c("Area [µm²]","ROI","Perimeter [µm]","Mean (Radius) [µm]","Mean (Gray Intensity Value)","Brainbank_ID")]
-  df <- df[,c("Area [µm²]","ROI","Mean (Gray Intensity Value)","Brainbank_ID")]
-  
-  # process totals 
-  df_roi <- read_xlsx(file.names[i], 3)
-  df_roi <-  df_roi[!is.na(df_roi$ROI),]
-  # select cols
-  df_roi <- df_roi[,c("ROI","Sum (Area) [µm²]","Object Area Fraction ROI [%]","Mean (Mean (Gray Intensity Value))","Mean (Shape Factor)","ROI Area [µm²]")]
-  # aggregate over ROI
-  tmp <- aggregate(cbind(`Sum (Area) [µm²]`,`Mean (Mean (Gray Intensity Value))`,`ROI Area [µm²]`) ~ ROI, data = df_roi, FUN = sum, na.rm = TRUE)
-  # mapvalues
-  df$`Sum (Area) [µm²]` <- mapvalues(df$ROI,tmp$ROI,tmp$`Sum (Area) [µm²]`)
-  df$`Mean (Mean (Gray Intensity Value))` <- mapvalues(df$ROI,tmp$ROI,tmp$`Mean (Mean (Gray Intensity Value))`)
-  df$`ROI Area [µm²]` <- mapvalues(df$ROI,tmp$ROI,tmp$`ROI Area [µm²]`)
-  
-  # add to list
-  ag_list[[i]] <- df
-}
-
-# collapse to dataframe
-df_agg <- as.data.frame(do.call("rbind", ag_list))
-
-# format
-df_agg$log10_Area <- log10(df_agg$`Area [µm²]`)
+# # list of NM quant files
+# file.names <- list.files(path=NM_data_dir,full.names=T)
+# ag_list <- list()
+# for (i in 1:length(file.names)){
+#   print(length(file.names)-i)
+#   print(file.names[i])
+#   df <- read_xlsx(file.names[i], 1)
+#   # remove rows without ROI eg. summary rows.
+#   df <- df[!is.na(df$ROI),]
+#   # add Brainbank_ID
+#   df$Brainbank_ID <- rep(gsub("_.*","",basename(file.names[i])),nrow(df))
+#   # select cols
+#   #df <- df[,c("Area [µm²]","ROI","Perimeter [µm]","Mean (Radius) [µm]","Mean (Gray Intensity Value)","Brainbank_ID")]
+#   df <- df[,c("Area [µm²]","ROI","Mean (Gray Intensity Value)","Brainbank_ID")]
+#   
+#   # process totals 
+#   df_roi <- read_xlsx(file.names[i], 3)
+#   df_roi <-  df_roi[!is.na(df_roi$ROI),]
+#   # select cols
+#   df_roi <- df_roi[,c("ROI","Sum (Area) [µm²]","Object Area Fraction ROI [%]","Mean (Mean (Gray Intensity Value))","Mean (Shape Factor)","ROI Area [µm²]")]
+#   # aggregate over ROI
+#   tmp <- aggregate(cbind(`Sum (Area) [µm²]`,`Mean (Mean (Gray Intensity Value))`,`ROI Area [µm²]`) ~ ROI, data = df_roi, FUN = sum, na.rm = TRUE)
+#   # mapvalues
+#   df$`Sum (Area) [µm²]` <- mapvalues(df$ROI,tmp$ROI,tmp$`Sum (Area) [µm²]`)
+#   df$`Mean (Mean (Gray Intensity Value))` <- mapvalues(df$ROI,tmp$ROI,tmp$`Mean (Mean (Gray Intensity Value))`)
+#   df$`ROI Area [µm²]` <- mapvalues(df$ROI,tmp$ROI,tmp$`ROI Area [µm²]`)
+#   
+#   # add to list
+#   ag_list[[i]] <- df
+# }
+# 
+# # collapse to dataframe
+# df_agg <- as.data.frame(do.call("rbind", ag_list))
+# 
+# # format
+# df_agg$log10_Area <- log10(df_agg$`Area [µm²]`)
 
 
 
@@ -164,10 +164,10 @@ for (i in 1:length(var_interest)) {
     geom_density(alpha=.2, fill="grey") + 
     geom_vline(data=as.data.frame(t(modes)),
                mapping=aes(xintercept=Mode), col="#D18A4e", size=1) +
-    xlab("log10(`Area [µm²]`)") + ylab("Density") 
+    xlab("log10(Area [µm²])") + ylab("Density") + xlim(0.5,3.5)
   
-  arrange <- ggarrange(plotlist=list(g1,g2), nrow=2, ncol=1, widths = c(2,2))
-  ggsave(paste0("Mode_Trace_",var_interest[i],".png"), arrange)
+  arrange <- ggarrange(plotlist=list(g1,g2), nrow=2, ncol=2, widths = c(2,2))
+  ggsave(paste0("Mode_Trace_",var_interest[i],".pdf"), arrange,width = 8, height = 6)
 }
 
 #######################################################

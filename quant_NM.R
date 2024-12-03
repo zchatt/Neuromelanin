@@ -6,6 +6,8 @@ library(dplyr)
 library(plyr)
 library(ggpubr)
 library(MASS)
+library(ggbeeswarm)
+library(ggridges)
 theme_set(theme_minimal())
 
 ###############
@@ -95,12 +97,15 @@ df_agg$log10_Area <- log10(df_agg$`Area [µm²]`)
 #########################################################################
 df_agg_run <- df_agg
 
+df_collect <- list()
 cutoff_eNM <- list()
 cutoff_iNM <- list()
 max_iNM <- list()
 min_eNM <- list()
 
-roi_uniq <- unique(df_agg_run$ROI)
+#roi_uniq <- unique(df_agg_run$ROI) # select ROI's to use to define iNM and eNM thresholds
+roi_uniq <- c("SNL","SNV","SND") # select ROI's to use to define iNM and eNM thresholds
+
 for (i in 1:length(roi_uniq)){
   # k-means clustering on log10 reads
   set.seed(20)
@@ -159,6 +164,7 @@ for (i in 1:length(roi_uniq)){
   min_eNM[[i]] <- min(x[df_agg$intra.extra == "eNM"],na.rm = T)
   
   # plot data
+  # histogram
   p3 <- df_agg %>%
     ggplot(aes(log10(`Area [µm²]`), ..scaled.., fill=factor(intra.extra))) +
     geom_histogram(bins=20,aes(y=..count../sum(..count..))) +
@@ -170,7 +176,9 @@ for (i in 1:length(roi_uniq)){
     geom_density(aes(group=1)) + ggtitle(roi_uniq[i])
   
   ggsave(paste0(roi_uniq[i],"dist_iNMeNM.png"), p3)
-
+  
+  # assign to collection list
+  df_collect[[i]] <- df_agg 
 }
 
 dat <- as.data.frame(cbind(ROI = roi_uniq, cutoff_eNM = 10^unlist(cutoff_eNM),
@@ -178,6 +186,139 @@ dat <- as.data.frame(cbind(ROI = roi_uniq, cutoff_eNM = 10^unlist(cutoff_eNM),
              min_eNM = 10^unlist(min_eNM)))
 
 write.table(dat, file="dist_metrics.txt",sep="\t", quote = F, row.names = F)
+
+# beeswarm of total
+combined_df <- do.call(rbind, df_collect )
+
+p4 <- combined_df %>%
+  ggplot(aes(x = factor(intra.extra), y = log10(`Area [µm²]`), color = factor(intra.extra))) +
+  scale_color_manual(values = c("grey", "red", "black")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(0.5, 3.5)) +  # Adjust viewport without removing data
+  labs(color = "") +
+  geom_vline(xintercept = as.numeric(factor(levels(df_agg$intra.extra)[1])), color = "red", lty = 2) +  # Adjust intercepts for factor levels
+  geom_vline(xintercept = as.numeric(factor(levels(df_agg$intra.extra)[2])), color = "grey", lty = 2) +
+  ggtitle(roi_uniq[i]) + geom_quasirandom(size = 1) +
+  guides(color = FALSE) + ylab("log10(Area [µm²])") + xlab("")
+
+
+p4 <- combined_df %>%
+  ggplot(aes(x = factor(intra.extra), y = log10(`Area [µm²]`), color = factor(intra.extra))) +
+  scale_color_manual(values = c("grey", "red", "black")) +
+  theme_minimal() +
+  coord_cartesian(xlim = c(0.5, 3.5)) + 
+  labs(color = "", y = "log10(Area [µm²])", x = "") +
+  geom_vline(xintercept = as.numeric(factor(levels(df_agg$intra.extra)[1])), color = "red", lty = 2) +
+  geom_vline(xintercept = as.numeric(factor(levels(df_agg$intra.extra)[2])), color = "grey", lty = 2) +
+  geom_quasirandom(size = 1) +
+  guides(color = FALSE) +
+  facet_wrap(~ROI, scales = "free_x", nrow = 1) 
+
+
+# Print the plot
+ggsave("swarm_iNMeNM.png", p4)
+
+# ridgeline
+p4_ridgeline <- combined_df[!is.na(combined_df$intra.extra),] %>%
+  ggplot(aes(x = log10(`Area [µm²]`), y = factor(ROI), fill = factor(intra.extra))) +
+  geom_density_ridges(scale = 3, alpha = 0.8) +  # Adjust scale for better visualization
+  scale_fill_manual(values = c("grey", "red", "white")) +
+  theme_minimal() +
+  labs(fill = "", y = "ROI", x = "log10(Area [µm²])") +
+  theme(legend.position = "right")
+
+# Print the plot
+ggsave("ridgeline_iNMeNM.png", p4_ridgeline)
+
+# ridgeline 2
+combined_df <- combined_df[!is.na(combined_df$intra.extra),]
+combined_df$group_interaction <- interaction(combined_df$ROI, combined_df$intra.extra)
+unique_combinations <- unique(combined_df$group_interaction)
+unique_combinations  <- sort(unique_combinations)
+manual_colors <- setNames(c("yellow","red","red2","red3","red4","purple",
+                            "grey90","grey80","grey70","grey60","grey50","grey40"), unique_combinations)
+
+p4_ridgeline <- combined_df[!is.na(combined_df$intra.extra),] %>%
+  ggplot(aes(x = log10(`Area [µm²]`), y = factor(ROI), fill = group_interaction)) +
+  geom_density_ridges(scale = 3, alpha = 0.8) +
+  scale_fill_manual(values = manual_colors) +  # Use manually defined colors
+  theme_minimal() +
+  theme(legend.position="none") +
+  labs(fill = "ROI x Cell Type", y = "ROI", x = "log10(Area [µm²])")
+
+# Print the plot
+ggsave("ridgeline2_iNMeNM.png", p4_ridgeline)
+
+
+# ridgeline 3
+combined_df <- combined_df[!is.na(combined_df$intra.extra),]
+combined_df$group_interaction <- interaction(combined_df$ROI, combined_df$intra.extra)
+
+combined_df <- combined_df[combined_df$ROI %in% c("SNV","SND","SNL"),]
+
+unique_combinations <- unique(combined_df$group_interaction)
+unique_combinations  <- sort(unique_combinations)
+manual_colors <- setNames(c("red","red2","red4",
+                            "grey90","grey70","grey40"), unique_combinations)
+
+p4_ridgeline <- combined_df[!is.na(combined_df$intra.extra),] %>%
+  ggplot(aes(x = log10(`Area [µm²]`), y = factor(ROI), fill = group_interaction)) +
+  geom_density_ridges(scale = 3, alpha = 0.8) +
+  scale_fill_manual(values = manual_colors) +  # Use manually defined colors
+  theme_minimal() +
+  theme(legend.position="none") +
+  labs(fill = "ROI x Cell Type", y = "Frequency", x = "log10(Area [µm²])")
+
+# Print the plot
+arrange <- ggarrange(plotlist=list(p4_ridgeline), nrow=2, ncol=2, widths = c(2,2))
+ggsave("ridgeline3_iNMeNM.png",arrange, width = 8, height = 6)
+
+
+pdf("ridgeline3_iNMeNM.pdf", width = 8, height = 6)
+arrange
+dev.off()
+
+
+
+# ridgeline 4 - all data i.e. outside those tissues used for iNM and eNM classification
+combined_df <- df_agg_run
+combined_df$intra.extra <- NA
+combined_df$intra.extra[combined_df$`Area [µm²]` < as.numeric(min(dat$cutoff_eNM)) ] <- "eNM"
+combined_df$intra.extra[combined_df$`Area [µm²]` > as.numeric(max(dat$cutoff_iNM)) ] <- "iNM"
+
+combined_df <- combined_df[!is.na(combined_df$intra.extra),]
+combined_df$ROI_combined <- combined_df$ROI
+combined_df$ROI_combined[combined_df$ROI_combined %in% c("SNV","SND","SNL") ] <- "SNpc"
+# combined_df <- combined_df[combined_df$ROI_combined %in% c("LC","VTA","SNpc"),]
+combined_df <- combined_df[combined_df$ROI_combined %in% c("SNpc"),]
+combined_df$group_interaction <- interaction(combined_df$ROI_combined, combined_df$intra.extra)
+
+
+unique_combinations <- unique(combined_df$group_interaction)
+unique_combinations  <- sort(unique_combinations)
+# manual_colors <- setNames(c("yellow","red","purple",
+#                             "grey90","grey70","grey40"), unique_combinations)
+manual_colors <- setNames(c("red","grey70"), unique_combinations)
+
+
+p5_ridgeline <- combined_df[!is.na(combined_df$intra.extra),] %>%
+  ggplot(aes(x = log10(`Area [µm²]`), y = factor(ROI_combined), fill = group_interaction)) +
+  geom_density_ridges(scale = 3, alpha = 0.8) +
+  scale_fill_manual(values = manual_colors) +  # Use manually defined colors
+  theme_minimal() +
+  theme(legend.position="none") +
+  labs(fill = "ROI x Cell Type", y = "Frequency", x = "log10(Area [µm²])")
+
+# Print the plot
+arrange <- ggarrange(plotlist=list(p5_ridgeline), nrow=2, ncol=2, widths = c(2,2))
+ggsave("ridgeline5_iNMeNM.png",arrange, width = 8, height = 6)
+
+pdf("ridgeline5_iNMeNM.pdf", width = 8, height = 6)
+arrange
+dev.off()
+
+
+
 
 ######################################################
 ### Part 3: Assigning intra and extra-cellular NM ###
@@ -219,9 +360,11 @@ p3 <- df_agg %>%
   xlim(0.5,3.5) +
   labs(fill="") + geom_vline(xintercept = log10(max(as.numeric(dat$cutoff_iNM))), color = "red", lty=2) +
   geom_vline(xintercept = log10(sort(as.numeric(dat$cutoff_eNM))[2]), color = "grey", lty=2) +
-  geom_density(aes(group=1))
+  geom_density(aes(group=1)) + theme(legend.position = "none") +
+  xlab("log10(Area [µm²])") + ylab("Density") + xlim(0.5,3.5)
 
-ggsave("threshold_dist_iNMeNM.png", p3)
+arrange <- ggarrange(plotlist=list(p3), nrow=2, ncol=2, widths = c(2,2))
+ggsave("threshold_dist_iNMeNM.pdf",arrange, width = 8, height = 6)
 
 # save to file for downstream analysis
 save(df_agg,file="df_iNMeNM_230124.Rdata")
